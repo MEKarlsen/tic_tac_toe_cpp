@@ -30,3 +30,8 @@ Thumbs.db
 subprojects/
 builddir/
 meson.build
+
+# Documentation
+Doxyfile
+latex/
+Doxyfile.bak

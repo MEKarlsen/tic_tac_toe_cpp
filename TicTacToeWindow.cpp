@@ -1,3 +1,8 @@
+/**
+ * @file TicTacToeWindow.cpp
+ * @brief Contains the implementation of the TicTacToeWindow class.
+ */
+
 #include "TicTacToeWindow.h"
 #include <iostream>
 
@@ -7,8 +12,8 @@ constexpr int RESET_BUTTON_X = 10;
 constexpr int RESET_BUTTON_Y = 10;
 constexpr int QUIT_BUTTON_X = 120;
 constexpr int QUIT_BUTTON_Y = 10;
-constexpr int WINNER_TEXT_X = 240;
-constexpr int WINNER_TEXT_Y = 10;
+constexpr int RESULT_TEXT_X = 240;
+constexpr int RESULT_TEXT_Y = 10;
 
 constexpr int BOARD_SIZE = 600;
 constexpr int CELL_SIZE = BOARD_SIZE / 3;
@@ -16,6 +21,14 @@ constexpr int BOARD_X = 20;
 constexpr int BOARD_Y = 60;
 constexpr int FONT_SIZE = 100;
 
+/**
+ * @brief Constructs the TicTacToeWindow object and initializes the game.
+ * @param x X-coordinate of the window.
+ * @param y Y-coordinate of the window.
+ * @param width Width of the window.
+ * @param height Height of the window.
+ * @param title Title of the window.
+ */
 TicTacToeWindow::TicTacToeWindow(int x, int y, int width, int height, const std::string& title)
     : AnimationWindow(x, y, width, height, title), current_player('X'), reset_button({RESET_BUTTON_X, RESET_BUTTON_Y}, BUTTON_WIDTH, BUTTON_HEIGHT, "Reset"), quit_button({QUIT_BUTTON_X, QUIT_BUTTON_Y}, BUTTON_WIDTH, BUTTON_HEIGHT, "Quit"), game_over(false) { 
     reset_game();
@@ -25,6 +38,9 @@ TicTacToeWindow::TicTacToeWindow(int x, int y, int width, int height, const std:
     quit_button.setCallback(std::bind(&TicTacToeWindow::cb_quit, this));
 }
 
+/**
+ * @brief Starts the game loop.
+ */
 void TicTacToeWindow::play() {
     while (!should_close()) {
         if (is_left_mouse_button_down() && !game_over) {
@@ -42,28 +58,32 @@ void TicTacToeWindow::play() {
             }
         }
 
-        if (check_winner() && !game_over) {
+        if (check_winner()) {
+            result_text = "Player " + std::string(1, last_player) + " wins!";
+            draw_winning_line();
+            if (!game_over) {
+                write_result_to_file(result_text);
+            }
             game_over = true;
-            winner_text = "Player " + std::string(1, last_player) + " wins!";
-            write_result_to_file(winner_text);
-        } else if (check_draw() && !game_over) {
+        } else if (check_draw()) {
+            result_text = "The game is a draw!";
+            if (!game_over) {
+                write_result_to_file(result_text);
+            }
             game_over = true;
-            winner_text = "The game is a draw!";
-            write_result_to_file(winner_text);
         }
 
         draw_board();
         draw_marks();
-
-        if (game_over) {
-            draw_winning_line();
-        }
-        draw_text({WINNER_TEXT_X, WINNER_TEXT_Y}, winner_text, TDT4102::Color::black, 30);
+        draw_text({RESULT_TEXT_X, RESULT_TEXT_Y}, result_text, TDT4102::Color::black, 30);
 
         next_frame();
     }
 }
 
+/**
+ * @brief Draws the Tic Tac Toe board grid.
+ */
 void TicTacToeWindow::draw_board() {
     for (int i = 1; i < 3; ++i) {
         draw_line({BOARD_X + i * CELL_SIZE, BOARD_Y}, {BOARD_X + i * CELL_SIZE, BOARD_Y + BOARD_SIZE}, TDT4102::Color::black);
@@ -71,6 +91,9 @@ void TicTacToeWindow::draw_board() {
     }
 }
 
+/**
+ * @brief Draws the marks (X and O) on the board.
+ */
 void TicTacToeWindow::draw_marks() {
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
@@ -83,10 +106,19 @@ void TicTacToeWindow::draw_marks() {
     }
 }
 
+/**
+ * @brief Draws the line indicating the winning combination on the board.
+ */
 void TicTacToeWindow::draw_winning_line() {
     draw_line(winning_line.first, winning_line.second, TDT4102::Color::yellow);
 }
 
+/**
+ * @brief Handles mouse click events and updates the board with marks.
+ * @param x X-coordinate of the mouse click.
+ * @param y Y-coordinate of the mouse click.
+ * @throws std::out_of_range if the clicked position is outside the board.
+ */
 void TicTacToeWindow::handle_click(int x, int y) {
     int row = (y - BOARD_Y) / CELL_SIZE;
     int col = (x - BOARD_X) / CELL_SIZE;
@@ -98,14 +130,14 @@ void TicTacToeWindow::handle_click(int x, int y) {
     if (board[row][col] == ' ') {
         board[row][col] = current_player;
         last_player = current_player; 
-        if (current_player == 'X') {
-            current_player = 'O';
-        } else {
-            current_player = 'X';
-        }
+        current_player = (current_player == 'X') ? 'O' : 'X';
     }
 }
 
+/**
+ * @brief Checks if there is a winner in the game.
+ * @return true if there is a winner, false otherwise.
+ */
 bool TicTacToeWindow::check_winner() {
     // Check rows and columns
     for (int i = 0; i < 3; ++i) {
@@ -132,6 +164,10 @@ bool TicTacToeWindow::check_winner() {
     return false;
 }
 
+/**
+ * @brief Checks if the game has ended in a draw.
+ * @return true if the game is a draw, false otherwise.
+ */
 bool TicTacToeWindow::check_draw() {
     for (const auto& row : board) {
         for (char cell : row) {
@@ -143,15 +179,22 @@ bool TicTacToeWindow::check_draw() {
     return true;
 }
 
+/**
+ * @brief Resets the game to its initial state.
+ */
 void TicTacToeWindow::reset_game() {
     std::cout << "Resetting game..." << std::endl; 
     board = std::vector<std::vector<char>>(3, std::vector<char>(3, ' '));
     current_player = 'X';
     game_over = false;
-    winner_text.clear();
+    result_text.clear();
     std::cout << "Game reset complete." << std::endl;
 }
 
+/**
+ * @brief Writes the game result to a file.
+ * @param result The result string to write.
+ */
 void TicTacToeWindow::write_result_to_file(const std::string& result) {
     try {
         std::ofstream file("game_results.txt", std::ios::app);
@@ -164,11 +207,17 @@ void TicTacToeWindow::write_result_to_file(const std::string& result) {
     }
 }
 
+/**
+ * @brief Callback function for the reset button.
+ */
 void TicTacToeWindow::cb_reset() {
     std::cout << "Reset button pressed." << std::endl;
     reset_game();
 }
 
+/**
+ * @brief Callback function for the quit button.
+ */
 void TicTacToeWindow::cb_quit() {
     std::cout << "Quit button pressed." << std::endl; 
     close();
