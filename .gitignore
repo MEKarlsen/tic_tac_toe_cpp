@@ -1,0 +1,32 @@
+# Compiled binary files
+*.exe
+*.out
+*.o
+*.obj
+*.so
+*.a
+*.dll
+
+# Build directories
+build/
+bin/
+dist/
+Debug/
+Release/
+
+# VS Code settings
+.vscode/
+
+# Dependency and cache files
+*.log
+*.cache
+*.d
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# User-specific files
+subprojects/
+builddir/
+meson.build
